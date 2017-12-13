@@ -9,19 +9,40 @@
         responseContainer.innerHTML = '';
         searchedForText = searchField.value;
 
-        const nyTimesRequest = $.ajax(`http://api.nytimes.com/svc/search/v2/articlesearch.json?q=${searchedForText}&api-key=4ba5d0892231481ea5300465875d7bc2`);
-        nyTimesRequest.done(addArticle);
 
-        const unsplashRequest = $.ajax({url: `https://api.unsplash.com/search/photos?page=1&query=${searchedForText}`,
+        //fetching articles
+        fetch(`http://api.nytimes.com/svc/search/v2/articlesearch.json?q=${searchedForText}&api-key=4ba5d0892231481ea5300465875d7bc2`)
+            .then((response) =>{
+            return response.json();
+            })
+            .then(addArticle)
+            .catch(e => {
+                return requestError(e, 'article');
+            });
+
+
+        //fetchin images
+        fetch(`https://api.unsplash.com/search/photos?page=1&query=${searchedForText}`,
+            {
             headers: {
                 Authorization: 'Client-ID a217698db8996bc5efd3bcb8e00a5d0cf5a81b89f44bb1d6120ed2563f2d5cd7'
             }
-        });
+        }).then((response)=>{
+            return response.json();
+        }).then(addImage)
+            .catch(e => {
+                return requestError(e, 'image');
+            });
 
-        unsplashRequest.done(addImage);
+
 
     });
 
+
+    function requestError(e, type){
+        console.log(e);
+        responseContainer.insertAdjacentHTML('beforeend', `<p class="network-warning">Oh no! There was an error making a request for the ${type}.</p>`);
+    }
 
     function addImage(data) {
         let htmlContent = '';
@@ -47,7 +68,6 @@
 
     function addArticle(data) {
         let htmlContent = '';
-       // const data = JSON.parse(this.responseText);
 
         if(data && data.response.docs && data.response.docs.length>1){
             htmlContent = '<ul>'+ data.response.docs.map(article =>
